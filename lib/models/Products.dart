@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
-import 'package:provider/provider.dart';
 
 class ProductItem with ChangeNotifier {
   final int id;
@@ -53,7 +52,6 @@ Future<List<ProductItem>> fetchProducts() async {
   return results.map((row) => ProductItem.fromRow(row['product']!)).toList();
 }
 
-// CartItem model
 class CartItem {
   final ProductItem product;
   int quantity;
@@ -61,7 +59,6 @@ class CartItem {
   CartItem({required this.product, this.quantity = 0});
 }
 
-// CartProvider to manage cart state
 class CartProvider with ChangeNotifier {
   final List<CartItem> _cartItems = [];
 
@@ -99,7 +96,6 @@ class CartProvider with ChangeNotifier {
   bool isEmpty() => _cartItems.isEmpty;
 }
 
-// Format number with thousands spaces
 String formatNumber(String number) {
   String cleanNumber = number.replaceAll(RegExp(r'[^0-9]'), '');
   if (cleanNumber.length <= 3) return cleanNumber;
