@@ -1,24 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
-import 'package:provider/provider.dart';
 
 class ProductItem with ChangeNotifier {
   final int id;
   final String name;
   final int cost;
   final String image;
-  final String salesman;
-  final double rating;
-  final int reviews;
 
   ProductItem({
     required this.id,
     required this.name,
     required this.cost,
     required this.image,
-    required this.salesman,
-    required this.rating,
-    required this.reviews,
   });
 
   factory ProductItem.fromRow(Map<String, dynamic> row) {
@@ -27,12 +20,6 @@ class ProductItem with ChangeNotifier {
       name: row['name'] as String,
       cost: row['cost'] as int,
       image: row['image'] as String,
-      salesman: row['salesman'] as String,
-      rating:
-      row['rating'] is int
-          ? (row['rating'] as int).toDouble()
-          : row['rating'] as double,
-      reviews: row['reviews'] as int,
     );
   }
 }
@@ -53,7 +40,6 @@ Future<List<ProductItem>> fetchProducts() async {
   return results.map((row) => ProductItem.fromRow(row['product']!)).toList();
 }
 
-// CartItem model
 class CartItem {
   final ProductItem product;
   int quantity;
@@ -61,11 +47,29 @@ class CartItem {
   CartItem({required this.product, this.quantity = 0});
 }
 
-// CartProvider to manage cart state
 class CartProvider with ChangeNotifier {
   final List<CartItem> _cartItems = [];
 
   List<CartItem> get cartItems => _cartItems;
+
+  void addQuantity(int productId) {
+    final index = cartItems.indexWhere((item) => item.product.id == productId);
+    if (index != -1) {
+      cartItems[index].quantity++;
+      notifyListeners();
+    }
+  }
+
+  void removeQuantity(int productId) {
+    final index = cartItems.indexWhere((item) => item.product.id == productId);
+    if (index != -1 && cartItems[index].quantity > 0) {
+      cartItems[index].quantity--;
+      if (cartItems[index].quantity == 0) {
+        cartItems.removeAt(index);
+      }
+      notifyListeners();
+    }
+  }
 
   void addToCart(ProductItem product) {
     final existingCartItem = _cartItems.firstWhere(
@@ -99,7 +103,6 @@ class CartProvider with ChangeNotifier {
   bool isEmpty() => _cartItems.isEmpty;
 }
 
-// Format number with thousands spaces
 String formatNumber(String number) {
   String cleanNumber = number.replaceAll(RegExp(r'[^0-9]'), '');
   if (cleanNumber.length <= 3) return cleanNumber;
