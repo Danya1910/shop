@@ -1,274 +1,153 @@
 import 'package:flutter/material.dart';
-import 'package:postgres/postgres.dart';
+import 'package:provider/provider.dart';
+import 'package:shop/models/Products.dart';
+import 'package:shop/widgets/ProductCard.dart';
+import 'package:shop/pages/CartPage.dart';
 
-class ProductItem with ChangeNotifier {
-  final int id;
-  final String name;
-  final int cost;
-  final String image;
-
-  ProductItem({
-    required this.id,
-    required this.name,
-    required this.cost,
-    required this.image,
-  });
-
-  factory ProductItem.fromRow(Map<String, dynamic> row) {
-    return ProductItem(
-      id: row['id'] as int,
-      name: row['name'] as String,
-      cost: row['cost'] as int,
-      image: row['image'] as String,
-    );
-  }
-}
-
-Future<List<ProductItem>> fetchProducts() async {
-  final connection = PostgreSQLConnection(
-    '10.0.2.2',
-    5432,
-    'shopdb',
-    username: 'postgres',
-    password: 'Daniil1910',
-  );
-
-  await connection.open();
-
-  final results = await connection.mappedResultsQuery('SELECT * FROM product');
-
-  await connection.close();
-
-  return results.map((row) => ProductItem.fromRow(row['product']!)).toList();
-}
-
-class CartItem {
-  final ProductItem product;
-  int quantity;
-
-  CartItem({required this.product, this.quantity = 0});
-}
-
-class Shop extends StatefulWidget {
-  const Shop({super.key});
+class ShopPage extends StatefulWidget {
+  const ShopPage({super.key});
 
   @override
-  State<Shop> createState() => _ShopState();
+  State<ShopPage> createState() => _ShopPageState();
 }
 
-class _ShopState extends State<Shop> {
+class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin {
   Map<int, int> _counts = {};
-  List<CartItem> _cartItems = [];
   Map<int, bool> _showMoreButtons = {};
+  late AnimationController _animationController;
+  late Animation<double> _animation;
 
-  void _updateCart(ProductItem product, int count) {
-    if (count > 0) {
-      final existingCartItem = _cartItems.firstWhere(
-            (item) => item.product.id == product.id,
-        orElse: () => CartItem(product: product),
-      );
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
 
-      if (existingCartItem.quantity == 0) {
-        _cartItems.add(existingCartItem);
-      }
+    _animation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.6), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.6, end: 1.0), weight: 50),
+    ]).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
 
-      existingCartItem.quantity = count;
-    } else {
-      _cartItems.removeWhere((item) => item.product.id == product.id);
-    }
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final cartProvider = Provider.of<CartProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "Магазин",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text("Магазин", style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: Colors.black54,
+        backgroundColor: Colors.black,
       ),
-      backgroundColor: Colors.white70,
+      backgroundColor: Colors.black87,
       body: FutureBuilder<List<ProductItem>>(
         future: fetchProducts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Ошибка: ${snapshot.error}'));
+            return Center(
+              child: Text(
+                'Ошибка: ${snapshot.error}',
+                style: const TextStyle(color: Colors.white),
+              ),
+            );
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Нет товаров'));
+            return const Center(
+              child: Text('Нет товаров', style: TextStyle(color: Colors.white)),
+            );
           } else {
             final products = snapshot.data!;
+
+            for (var product in products) {
+              _counts.putIfAbsent(product.id, () => 0);
+              _showMoreButtons.putIfAbsent(product.id, () => false);
+            }
+
             return GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              padding: const EdgeInsets.all(10),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.78,
+                childAspectRatio: 0.5,
                 crossAxisSpacing: 10.0,
                 mainAxisSpacing: 10.0,
               ),
               itemCount: products.length,
               itemBuilder: (context, index) {
                 final product = products[index];
-                int count = _counts[product.id] ?? 0;
+                int count = _counts[product.id]!;
 
-                return Card(
-                  color: Colors.white24,
-                  elevation: 10,
-                  key: ValueKey(product.id),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 160,
-                        height: 160,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black, width: 2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.asset(
-                            product.image,
-                            width: 160,
-                            height: 160,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Text(product.name),
-                      Text(product.cost.toString()),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _showMoreButtons[product.id] == true
-                              ? Row(
-                            children: [
-                              IconButton(
-                                onPressed: () {
-                                  if (count > 0) {
-                                    setState(() {
-                                      _counts[product.id] = --count;
-                                      _updateCart(product, count);
-                                      if(_counts[product.id] == 0)
-                                        _showMoreButtons[product.id] = false;
-                                    });
-                                  }
-                                },
-                                icon: Icon(Icons.remove),
-                              ),
-                              Text(count.toString()),
-                              IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _counts[product.id] = ++count;
-                                    _updateCart(product, count);
-                                  });
-                                },
-                                icon: Icon(Icons.add),
-                              ),
-                            ],
-                          )
-                              : ElevatedButton(
-                            style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.white70)),
-                            onPressed: () {
-                              setState(() {
-                                _showMoreButtons[product.id] = true;
-                                _counts[product.id] = ++count;
-                                _updateCart(product, count);
-                              });
-                            },
-                            child: Text('В корзину'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                return ProductCard(
+                  product: product,
+                  counts: _counts,
+                  showMoreButtons: _showMoreButtons,
+                  count: count,
+                  onAdd: () {
+                    setState(() {
+                      _counts[product.id] = count + 1;
+                      _showMoreButtons[product.id] = true;
+                    });
+                    cartProvider.addToCart(product);
+                    _animationController.reset();
+                    _animationController.forward();
+                  },
+                  onRemove: () {
+                    if (count > 0) {
+                      setState(() {
+                        _counts[product.id] = count - 1;
+                        if (_counts[product.id]! <= 0) {
+                          _showMoreButtons[product.id] = false;
+                        }
+                      });
+                      cartProvider.removeFromCart(product);
+                      _animationController.reset();
+                      _animationController.forward();
+                    }
+                  },
                 );
               },
             );
           }
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => Cart(cartItems: _cartItems),
-            ),
-          );
-        },
-        child: Icon(Icons.shopping_cart),
-        backgroundColor: Colors.white24,
-        foregroundColor: Colors.black,
-      ),
-    );
-  }
-}
-
-
-class Cart extends StatelessWidget {
-  final List<CartItem> cartItems;
-
-  const Cart({super.key, required this.cartItems});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Корзина",
-          style: TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.black54,
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
-      backgroundColor: Colors.white70,
-      body:
-          cartItems.isEmpty
-              ? Center(child: Text('Корзина пуста'))
-              : ListView.builder(
-                itemCount: cartItems.length,
-                itemBuilder: (context, index) {
-                  final cartItem = cartItems[index];
-                  return Card(
-                    color: Colors.white24,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 160,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.black, width: 2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.asset(
-                              cartItem.product.image,
-                              width: 160,
-                              height: 160,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: ListTile(
-                            title: Text(cartItem.product.name),
-                            subtitle: Text('Количество: ${cartItem.quantity}'),
-                            trailing: Text(
-                              'Цена: ${cartItem.product.cost * cartItem.quantity}',
-                            ),
-                          ),
-                        ),
-                      ],
+      floatingActionButton: ScaleTransition(
+        scale: _animation,
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => const CartPage(),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeInOut,
                     ),
+                    child: child,
                   );
                 },
+                transitionDuration: const Duration(milliseconds: 400),
               ),
+            );
+          },
+          child: const Icon(Icons.shopping_cart),
+          backgroundColor: Colors.purple,
+          foregroundColor: Colors.white,
+        ),
+      ),
     );
   }
 }
+
+
