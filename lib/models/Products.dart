@@ -14,6 +14,7 @@ class ProductItem with ChangeNotifier {
     required this.image,
   });
 
+
   factory ProductItem.fromRow(Map<String, dynamic> row) {
     return ProductItem(
       id: row['id'] as int,
@@ -98,6 +99,11 @@ class CartProvider with ChangeNotifier {
       }
       notifyListeners();
     }
+  }
+
+  void clearCart() {
+    _cartItems.clear();
+    notifyListeners();
   }
 
   bool isEmpty() => _cartItems.isEmpty;

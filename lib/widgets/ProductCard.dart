@@ -49,8 +49,8 @@ class ProductCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 13.0, top: 5.0),
             child: Container(
-              width: double.infinity, // Растягивает контейнер на всю доступную ширину
-              alignment: Alignment.center, // Центрирует текст внутри контейнера
+              width: double.infinity,
+              alignment: Alignment.center,
               child: Text(
                 product.name,
                 textAlign: TextAlign.center,
@@ -79,10 +79,8 @@ class ProductCard extends StatelessWidget {
             ),
           const SizedBox(height: 5),
           Center(
-            // Оберните Row в Center
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              // Центрируем содержимое
               children: [
                 if (showMoreButtons[product.id] == true) ...[
                   IconButton(

@@ -73,7 +73,7 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
           ],
         ),
         centerTitle: true,
-        backgroundColor: Colors.green,
+        backgroundColor: const Color(0xFF0F5E0B),
         leading: IconButton(
           icon: const Icon(Icons.search, color: Colors.white),
           tooltip: 'search',
@@ -199,6 +199,76 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: SizedBox(
+        height: 45, // желаемая высота BottomAppBar
+        child: BottomAppBar(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              TextButton(
+                onPressed: () {
+                  // Действие для кнопки "Начало"
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.home_outlined),
+                    Text('Начало'),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Действие для кнопки "Начало"
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.money),
+                    Text('Начало'),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Действие для кнопки "Начало"
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.fastfood),
+                    Text('Начало'),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Действие для кнопки "Начало"
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.map),
+                    Text('Начало'),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Действие для кнопки "Начало"
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.more_horiz_outlined),
+                    Text('Начало'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

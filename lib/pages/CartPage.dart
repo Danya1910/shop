@@ -48,7 +48,9 @@ class CartPage extends StatelessWidget {
             ),
             // Add your right-side text here
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                cartProvider.clearCart();
+              },
               child: Text(
                 "Очистить", // Replace with your desired text
                 style: TextStyle(
@@ -59,7 +61,7 @@ class CartPage extends StatelessWidget {
             ),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: const Color(0xFF0F5E0B),
         iconTheme: IconThemeData(color: Colors.white),
       ),
       backgroundColor: const Color(0xFFF2F2F2),
